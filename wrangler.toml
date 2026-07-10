@@ -1,4 +1,4 @@
-name               = "vox-labs"
+name               = "voxlabs"
 main               = "src/worker.js"
 compatibility_date = "2026-07-05"
 
@@ -12,7 +12,7 @@ service = "text-to-speech"
 
 [[kv_namespaces]]
 binding = "USAGE_KV"
-id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+id = "5e310d2ae4394fa690fc47bd980f57a7"
 
 [vars]
-TURNSTILE_SITE_KEY = "REPLACE_WITH_YOUR_TURNSTILE_SITE_KEY"
+TURNSTILE_SITE_KEY = "0x4AAAAAADxGWHctWk2yfROX"
