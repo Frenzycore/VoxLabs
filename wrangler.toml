@@ -25,6 +25,10 @@ binding   = "ASSETS"
 binding = "TTS_API"
 service = "text-to-speech"
 
+[[services]]
+binding = "VISITORS_API"
+service = "visitors"
+
 [[kv_namespaces]]
 binding = "USAGE_KV"
 id = "5e310d2ae4394fa690fc47bd980f57a7"

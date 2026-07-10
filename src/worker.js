@@ -132,9 +132,10 @@ function handleConfig(env) {
   return jsonResponse({ turnstileSiteKey: isPlaceholder ? null : siteKey });
 }
 
-async function handleVisitors() {
+async function handleVisitors(env) {
   try {
-    const res = await fetch('https://visitors.ornzora.workers.dev/@voxlabs');
+    const upstreamRequest = new Request('https://visitors.ornzora.workers.dev/@voxlabs');
+    const res = await env.VISITORS_API.fetch(upstreamRequest);
     return new Response(res.body, {
       status: res.status,
       headers: { 'content-type': 'application/json' },
@@ -165,9 +166,10 @@ export default {
     }
 
     if (url.pathname === '/api/visitors') {
-      return handleVisitors();
+      return handleVisitors(env);
     }
 
     return env.ASSETS.fetch(request);
   },
 };
+// -- okey?   
