@@ -1,0 +1,185 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Vox Labs — Text to Speech">
+  <Navbar />
+
+  <main class="min-h-screen flex items-center justify-center px-4 pt-24 pb-12">
+    <div class="relative w-full max-w-xl rounded-4xl p-8 sm:p-10">
+      <header class="mb-8 text-center">
+        <div class="inline-flex flex-col items-center gap-2">
+          <svg width="30" height="30" viewBox="0 0 100 100">
+            <path d="M20 20 L50 66 L80 20" fill="none" stroke="var(--c-accent)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <h1 class="font-display text-3xl" style="color: var(--c-accent)">Vox <span style="color: #C0E729">Labs</span></h1>
+        </div>
+        <p class="text-sm mt-2" style="color: var(--c-text-soft)">Turn text into speech in one click.</p>
+      </header>
+
+      <div class="space-y-5">
+        <div>
+          <label for="text-input" class="block text-sm font-bold mb-2">Text</label>
+          <textarea
+            id="text-input"
+            rows="5"
+            placeholder="Write something here…"
+            class="w-full rounded-2xl border-2 p-4 text-base resize-none transition-colors"
+            style="border-color: var(--c-border); background: var(--c-base); color: var(--c-text)"
+          ></textarea>
+          <div class="mt-1 flex justify-between text-xs" style="color: var(--c-text-soft)">
+            <span id="quota-status"></span>
+            <span id="char-count">0 characters</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <span id="voice-label" class="block text-sm font-bold mb-2">Voice</span>
+            <div class="relative dropdown-wrapper" id="voice-dropdown-wrapper">
+              <button
+                id="voice-dropdown-btn"
+                type="button"
+                aria-label="Select voice"
+                aria-labelledby="voice-label"
+                aria-haspopup="true"
+                aria-expanded="false"
+                class="dropdown-trigger w-full flex items-center justify-between gap-2 rounded-2xl border-2 p-3 text-sm text-left transition-colors"
+                style="border-color: var(--c-border); background: var(--c-base); color: var(--c-text)"
+              >
+                <span id="voice-dropdown-label" class="truncate">Loading…</span>
+                <svg class="chevron shrink-0 transition-transform" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"></path>
+                </svg>
+              </button>
+              <div id="voice-dropdown-panel" class="dropdown-panel"></div>
+            </div>
+          </div>
+          <div>
+            <span id="lang-label" class="block text-sm font-bold mb-2">Language</span>
+            <div class="relative dropdown-wrapper" id="lang-dropdown-wrapper">
+              <button
+                id="lang-dropdown-btn"
+                type="button"
+                aria-label="Select language"
+                aria-labelledby="lang-label"
+                aria-haspopup="true"
+                aria-expanded="false"
+                class="dropdown-trigger w-full flex items-center justify-between gap-2 rounded-2xl border-2 p-3 text-sm text-left transition-colors"
+                style="border-color: var(--c-border); background: var(--c-base); color: var(--c-text)"
+              >
+                <span id="lang-dropdown-label" class="truncate">Loading…</span>
+                <svg class="chevron shrink-0 transition-transform" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"></path>
+                </svg>
+              </button>
+              <div id="lang-dropdown-panel" class="dropdown-panel"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl p-4" style="background: var(--c-accent-soft)">
+          <div class="flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <p id="voice-info-name" class="font-bold text-sm truncate" style="color: var(--c-accent)">—</p>
+              <p id="voice-info-description" class="text-xs mt-0.5" style="color: var(--c-text-soft)">Loading voice info…</p>
+            </div>
+            <button
+              id="preview-btn"
+              type="button"
+              aria-label="Play voice preview"
+              class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-transform hover:scale-105 disabled:opacity-40 disabled:hover:scale-100"
+              style="background: var(--c-accent)"
+            >
+              <svg id="preview-icon-play" width="13" height="13" viewBox="0 0 24 24" fill="#04140d"><path d="M8 5v14l11-7z"></path></svg>
+              <svg id="preview-icon-pause" class="hidden" width="13" height="13" viewBox="0 0 24 24" fill="#04140d"><path d="M6 5h4v14H6zM14 5h4v14h-4z"></path></svg>
+            </button>
+          </div>
+          <p id="voice-info-languages" class="text-xs mt-2" style="color: var(--c-text-soft)"></p>
+          <audio id="preview-audio" class="hidden"></audio>
+        </div>
+
+        <div>
+          <label for="reverb-toggle" class="flex items-center gap-3 cursor-pointer select-none w-fit">
+            <span class="relative inline-flex shrink-0">
+              <input id="reverb-toggle" type="checkbox" class="peer sr-only" />
+              <span id="reverb-track" class="w-11 h-6 rounded-full transition-colors" style="background: var(--c-border)"></span>
+              <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></span>
+            </span>
+            <span class="text-sm font-bold">Reverb effect</span>
+          </label>
+          <p class="text-xs mt-1.5" style="color: var(--c-text-soft)">Adds a rich echo to the voice.</p>
+        </div>
+
+        <div>
+          <button id="custom-key-toggle" type="button" class="text-xs font-bold underline" style="color: var(--c-text-soft)">
+            Have an API key?
+          </button>
+          <div id="custom-key-panel" class="hidden mt-2">
+            <input
+              id="custom-key-input"
+              type="text"
+              autocomplete="off"
+              placeholder="Enter your API key"
+              class="w-full rounded-2xl border-2 p-3 text-sm transition-colors"
+              style="border-color: var(--c-border); background: var(--c-base); color: var(--c-text)"
+            />
+            <p class="text-xs mt-1.5" style="color: var(--c-text-soft)">Bypasses the daily character limit. Contact the owner to get a key.</p>
+          </div>
+        </div>
+
+        <button
+          id="generate-btn"
+          type="button"
+          class="w-full rounded-2xl py-3.5 font-bold transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:hover:scale-100"
+          style="background: var(--c-accent); color: var(--c-base)"
+        >
+          <span id="btn-label">Generate Speech</span>
+        </button>
+
+        <div id="turnstile-section" class="hidden flex justify-center">
+          <div class="p-3">
+            <div id="turnstile-container" class="cf-turnstile"></div>
+          </div>
+        </div>
+
+        <p id="error-box" class="hidden text-sm rounded-xl p-3" style="background: var(--c-gold-soft); color: var(--c-gold-text)"></p>
+
+        <div id="result-box" class="hidden pt-2 space-y-3">
+          <audio id="audio-player" controls class="w-full"></audio>
+          <div class="flex gap-3">
+            <button
+              id="download-link"
+              type="button"
+              class="flex-1 rounded-2xl py-3 text-sm font-bold flex items-center justify-center gap-2 transition-transform hover:scale-[1.02]"
+              style="background: var(--c-accent); color: var(--c-base)"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12"></path><path d="M7 10l5 5 5-5"></path><path d="M5 21h14"></path>
+              </svg>
+              Download
+            </button>
+            <button
+              id="share-btn"
+              type="button"
+              class="flex-1 rounded-2xl py-3 text-sm font-bold flex items-center justify-center gap-2 transition-transform hover:scale-[1.02]"
+              style="background: transparent; color: var(--c-accent); border: 1.5px solid var(--c-accent)"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle>
+                <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"></path>
+              </svg>
+              Share
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+
+  <script src="../scripts/tts-app.js"></script>
+</Layout>

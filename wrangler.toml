@@ -1,0 +1,18 @@
+name               = "vox-labs"
+main               = "src/worker.js"
+compatibility_date = "2026-07-05"
+
+[assets]
+directory = "./dist"
+binding   = "ASSETS"
+
+[[services]]
+binding = "TTS_API"
+service = "text-to-speech"
+
+[[kv_namespaces]]
+binding = "USAGE_KV"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
+[vars]
+TURNSTILE_SITE_KEY = "REPLACE_WITH_YOUR_TURNSTILE_SITE_KEY"
