@@ -47,10 +47,6 @@
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
-  scrollbar-width: none;
-}
-*::-webkit-scrollbar {
-  display: none;
 }
 
 input,
@@ -67,11 +63,24 @@ button {
   opacity: 1;
 }
 
-textarea {
+html,
+body,
+textarea,
+select,
+.dropdown-panel {
   scrollbar-width: none;
 }
-textarea::-webkit-scrollbar {
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+textarea::-webkit-scrollbar,
+select::-webkit-scrollbar,
+.dropdown-panel::-webkit-scrollbar {
   display: none;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 html,
@@ -89,7 +98,7 @@ body {
 }
 
 ::selection {
-  background: var(--c-accent-soft);
+  background: color-mix(in srgb, var(--c-accent) 20%, transparent);
   color: var(--c-accent);
 }
 
@@ -151,10 +160,10 @@ textarea:focus {
   transition: background 0.15s, color 0.15s;
 }
 .dropdown-option:hover {
-  background: var(--c-accent-soft);
+  background: color-mix(in srgb, var(--c-accent) 12%, transparent);
 }
 .dropdown-option.active {
-  background: var(--c-accent-soft);
+  background: color-mix(in srgb, var(--c-accent) 12%, transparent);
   color: var(--c-accent);
 }
 
@@ -179,3 +188,9 @@ textarea:focus {
     animation: none;
   }
 }
+
+/* --- Custom color classes not available in Tailwind --- */
+
+.vx-text-base { color: var(--c-base) !important; }
+.vx-c-C0E729 { color: #C0E729 !important; }
+.vx-border-accent { border: 1.5px solid var(--c-accent) !important; }

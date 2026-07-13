@@ -1,4 +1,18 @@
 const QUOTA_TTL_SECONDS = 172800;
+const ASSET_MAX_AGE = 31536000; // 1 year
+
+const CSP_HEADER = {
+  'content-security-policy':
+    "default-src 'none'; " +
+    "script-src 'self' https://challenges.cloudflare.com https://widget-cloudflare-cf-turnstile.com https://challenges.cloudflare.com/cdn-cgi/scripts/95c7ed41/cloudflare-static/turnstile-embed.js; " +
+    "style-src 'self' https://challenges.cloudflare.com https://widget-cloudflare-cf-turnstile.com; " +
+    "font-src 'self' data:; " +
+    "img-src 'self' data:; " +
+    "connect-src 'self' https://visitors.ornzora.workers.dev https://text-to-speech.ornzora.workers.dev https://challenges.cloudflare.com; " +
+    "frame-src https://challenges.cloudflare.com; " +
+    "media-src 'self' blob:;",
+  'x-content-type-options': 'nosniff',
+};
 
 function getJakartaParts() {
   const jakarta = new Date(Date.now() + 7 * 60 * 60 * 1000);
@@ -74,9 +88,11 @@ async function verifyTurnstile(token, ip, env) {
 }
 
 function jsonResponse(data, status = 200) {
+  const headers = new Headers(CSP_HEADER);
+  headers.set('content-type', 'application/json; charset=utf-8');
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'content-type': 'application/json' },
+    headers,
   });
 }
 
@@ -136,9 +152,11 @@ async function handleVisitors(env) {
   try {
     const upstreamRequest = new Request('https://visitors.ornzora.workers.dev/@voxlabs');
     const res = await env.VISITORS_API.fetch(upstreamRequest);
+    const headers = new Headers(CSP_HEADER);
+    headers.set('content-type', 'application/json; charset=utf-8');
     return new Response(res.body, {
       status: res.status,
-      headers: { 'content-type': 'application/json' },
+      headers,
     });
   } catch {
     return jsonResponse({ visitors: null });
@@ -169,7 +187,38 @@ export default {
       return handleVisitors(env);
     }
 
-    return env.ASSETS.fetch(request);
+    // Static assets — add cache-control + CSP
+    const assetRes = await env.ASSETS.fetch(request);
+    const headers = new Headers(assetRes.headers);
+    headers.set('x-content-type-options', 'nosniff');
+
+    if (assetRes.status === 200) {
+      const ext = url.pathname.split('.').pop().toLowerCase();
+      if (ext === 'html' || ext === 'htm') {
+        headers.set('cache-control', 'no-cache');
+        headers.set('content-type', 'text/html; charset=utf-8');
+      } else if (ext === 'js') {
+        headers.set('cache-control', `public, max-age=${ASSET_MAX_AGE}, immutable`);
+        headers.set('content-type', 'application/javascript; charset=utf-8');
+      } else if (ext === 'css') {
+        headers.set('cache-control', `public, max-age=${ASSET_MAX_AGE}, immutable`);
+        headers.set('content-type', 'text/css; charset=utf-8');
+      } else if (ext === 'woff2' || ext === 'woff' || ext === 'ttf' || ext === 'eot') {
+        headers.set('cache-control', `public, max-age=${ASSET_MAX_AGE}, immutable`);
+      } else if (ext === 'svg' || ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'ico' || ext === 'webp') {
+        headers.set('cache-control', `public, max-age=${ASSET_MAX_AGE}, immutable`);
+      } else {
+        headers.set('cache-control', `public, max-age=${ASSET_MAX_AGE}`);
+      }
+    }
+
+    for (const [k, v] of Object.entries(CSP_HEADER)) {
+      headers.set(k, v);
+    }
+
+    return new Response(assetRes.body, {
+      status: assetRes.status,
+      headers,
+    });
   },
-};
-// -- okey?   
+};   

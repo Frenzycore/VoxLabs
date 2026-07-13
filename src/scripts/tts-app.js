@@ -213,7 +213,8 @@ function updateVoiceInfo() {
 textInput.addEventListener('input', updateCharCount);
 
 reverbToggle.addEventListener('change', () => {
-  reverbTrack.style.background = reverbToggle.checked ? 'var(--c-accent)' : 'var(--c-border)';
+  reverbTrack.classList.toggle('bg-accent', reverbToggle.checked);
+  reverbTrack.classList.toggle('bg-border', !reverbToggle.checked);
 });
 
 previewBtn.addEventListener('click', () => {
