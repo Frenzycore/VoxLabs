@@ -296,8 +296,8 @@ async function generateSpeech() {
     lastAudioUrl = URL.createObjectURL(lastAudioBlob);
 
     audioPlayer.src = lastAudioUrl;
-    downloadLink.href = lastAudioUrl;
-    downloadLink.download = `vox-labs-${Date.now()}.mp3`;
+    downloadLink.dataset.url = lastAudioUrl;
+    downloadLink.dataset.filename = `vox-labs-${Date.now()}.mp3`;
     resultBox.classList.remove('hidden');
     audioPlayer.play().catch(() => {});
     refreshQuotaStatus();
@@ -310,10 +310,24 @@ async function generateSpeech() {
   }
 }
 
+downloadLink.addEventListener('click', () => {
+  const url = downloadLink.dataset.url;
+  const filename = downloadLink.dataset.filename || 'vox-labs.mp3';
+  if (!url) return;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+});
+
 shareBtn.addEventListener('click', async () => {
   if (!lastAudioBlob) return;
 
-  const file = new File([lastAudioBlob], downloadLink.download || 'vox-labs.mp3', {
+  const filename = downloadLink.dataset.filename || 'vox-labs.mp3';
+  const file = new File([lastAudioBlob], filename, {
     type: lastAudioBlob.type || 'audio/mpeg',
   });
 
