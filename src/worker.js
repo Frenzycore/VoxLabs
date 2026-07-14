@@ -6,10 +6,10 @@ const CSP_HEADER = {
     "default-src 'none'; " +
     "script-src 'self' https://challenges.cloudflare.com https://widget-cloudflare-cf-turnstile.com https://challenges.cloudflare.com/cdn-cgi/scripts/95c7ed41/cloudflare-static/turnstile-embed.js; " +
     "style-src 'self' https://challenges.cloudflare.com https://widget-cloudflare-cf-turnstile.com; " +
-    "font-src 'self' data:; " +
+    "font-src 'self' https://challenges.cloudflare.com https://widget-cloudflare-cf-turnstile.com data:; " +
     "img-src 'self' data:; " +
     "connect-src 'self' https://visitors.ornzora.workers.dev https://text-to-speech.ornzora.workers.dev https://challenges.cloudflare.com; " +
-    "frame-src https://challenges.cloudflare.com; " +
+    "frame-src https://challenges.cloudflare.com https://challenges.cloudflare.com/cdn-cgi/challenge-platform; " +
     "media-src 'self' blob:;",
   'x-content-type-options': 'nosniff',
 };
