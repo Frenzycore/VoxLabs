@@ -1,25 +1,50 @@
-const btn = document.getElementById('theme-toggle');
-const iconMoon = document.getElementById('icon-moon');
-const iconSun = document.getElementById('icon-sun');
-const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+const STORAGE_KEY = 'vox-labs-theme';
+const THEME = {
+  DARK: 'dark',
+  LIGHT: 'light',
+};
+const THEME_COLOR = {
+  [THEME.LIGHT]: '#f4f9f6',
+  [THEME.DARK]: '#000000',
+};
 
-function reflectTheme(theme) {
-  iconMoon.classList.toggle('hidden', theme === 'light');
-  iconSun.classList.toggle('hidden', theme !== 'light');
-  if (metaThemeColor) metaThemeColor.setAttribute('content', theme === 'light' ? '#f4f9f6' : '#000000');
+const elements = {
+  btn: document.getElementById('theme-toggle'),
+  iconMoon: document.getElementById('icon-moon'),
+  iconSun: document.getElementById('icon-sun'),
+  metaThemeColor: document.querySelector('meta[name="theme-color"]'),
+};
+
+function getCurrentTheme() {
+  return document.documentElement.getAttribute('data-theme') || THEME.DARK;
+}
+
+function setMetaThemeColor(theme) {
+  if (!elements.metaThemeColor) return;
+  elements.metaThemeColor.setAttribute('content', THEME_COLOR[theme]);
+}
+
+function reflectIcons(theme) {
+  const isLight = theme === THEME.LIGHT;
+  elements.iconMoon?.classList.toggle('hidden', isLight);
+  elements.iconSun?.classList.toggle('hidden', !isLight);
 }
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   try {
-    localStorage.setItem('vox-labs-theme', theme);
-  } catch {}
-  reflectTheme(theme);
+    localStorage.setItem(STORAGE_KEY, theme);
+  } catch {
+    // Storage may be unavailable; theme still works for the session.
+  }
+  reflectIcons(theme);
+  setMetaThemeColor(theme);
 }
 
-reflectTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+function toggleTheme() {
+  const nextTheme = getCurrentTheme() === THEME.LIGHT ? THEME.DARK : THEME.LIGHT;
+  applyTheme(nextTheme);
+}
 
-btn.addEventListener('click', () => {
-  const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-  applyTheme(next);
-});
+applyTheme(getCurrentTheme());
+elements.btn?.addEventListener('click', toggleTheme);

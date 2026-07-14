@@ -148,16 +148,11 @@ function handleConfig(env) {
   return jsonResponse({ turnstileSiteKey: isPlaceholder ? null : siteKey });
 }
 
-async function handleVisitors(env) {
+async function handleVisitors() {
   try {
-    const upstreamRequest = new Request('https://visitors.ornzora.workers.dev/@voxlabs');
-    const res = await env.VISITORS_API.fetch(upstreamRequest);
-    const headers = new Headers(CSP_HEADER);
-    headers.set('content-type', 'application/json; charset=utf-8');
-    return new Response(res.body, {
-      status: res.status,
-      headers,
-    });
+    const res = await fetch('https://visitors.ornzora.workers.dev/@voxlabs');
+    const data = await res.json();
+    return jsonResponse(data);
   } catch {
     return jsonResponse({ visitors: null });
   }
@@ -184,7 +179,7 @@ export default {
     }
 
     if (url.pathname === '/api/visitors') {
-      return handleVisitors(env);
+      return handleVisitors();
     }
 
     // Static assets — add cache-control + CSP
