@@ -6,10 +6,10 @@ const CSP_HEADER = {
     "default-src 'none'; " +
     "script-src 'self' https://challenges.cloudflare.com https://widget-cloudflare-cf-turnstile.com https://challenges.cloudflare.com/cdn-cgi/scripts/95c7ed41/cloudflare-static/turnstile-embed.js; " +
     "style-src 'self' https://challenges.cloudflare.com https://widget-cloudflare-cf-turnstile.com; " +
-    "font-src 'self' https://challenges.cloudflare.com https://widget-cloudflare-cf-turnstile.com data:; " +
+    "font-src 'self' data:; " +
     "img-src 'self' data:; " +
     "connect-src 'self' https://visitors.ornzora.workers.dev https://text-to-speech.ornzora.workers.dev https://challenges.cloudflare.com; " +
-    "frame-src https://challenges.cloudflare.com https://challenges.cloudflare.com/cdn-cgi/challenge-platform; " +
+    "frame-src https://challenges.cloudflare.com; " +
     "media-src 'self' blob:;",
   'x-content-type-options': 'nosniff',
 };
@@ -148,11 +148,16 @@ function handleConfig(env) {
   return jsonResponse({ turnstileSiteKey: isPlaceholder ? null : siteKey });
 }
 
-async function handleVisitors() {
+async function handleVisitors(env) {
   try {
-    const res = await fetch('https://visitors.ornzora.workers.dev/@voxlabs');
-    const data = await res.json();
-    return jsonResponse(data);
+    const upstreamRequest = new Request('https://visitors.ornzora.workers.dev/@voxlabs');
+    const res = await env.VISITORS_API.fetch(upstreamRequest);
+    const headers = new Headers(CSP_HEADER);
+    headers.set('content-type', 'application/json; charset=utf-8');
+    return new Response(res.body, {
+      status: res.status,
+      headers,
+    });
   } catch {
     return jsonResponse({ visitors: null });
   }
@@ -179,7 +184,7 @@ export default {
     }
 
     if (url.pathname === '/api/visitors') {
-      return handleVisitors();
+      return handleVisitors(env);
     }
 
     // Static assets — add cache-control + CSP

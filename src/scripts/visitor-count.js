@@ -1,24 +1,9 @@
-const API_ENDPOINT = '/api/visitors';
-const FALLBACK_TEXT = '—';
+const el = document.getElementById('visitor-count');
 
-const visitorEl = document.getElementById('visitor-count');
-
-function formatCount(value) {
-  return typeof value === 'number' ? value.toLocaleString() : FALLBACK_TEXT;
+try {
+  const res = await fetch('/api/visitors');
+  const data = await res.json();
+  el.textContent = typeof data.visitors === 'number' ? data.visitors.toLocaleString() : '—';
+} catch {
+  el.textContent = '—';
 }
-
-async function loadVisitorCount() {
-  if (!visitorEl) return;
-
-  try {
-    const res = await fetch(API_ENDPOINT);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const data = await res.json();
-    visitorEl.textContent = formatCount(data.visitors);
-  } catch {
-    visitorEl.textContent = FALLBACK_TEXT;
-  }
-}
-
-loadVisitorCount();

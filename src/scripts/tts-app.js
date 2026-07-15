@@ -1,12 +1,3 @@
-// --- Constants ---
-const API_PATH = {
-  VOICES: '/api/voices',
-  QUOTA: '/api/quota',
-  TTS: '/api/tts',
-  CONFIG: '/api/config',
-};
-
-// --- DOM Elements ---
 const textInput = document.getElementById('text-input');
 const charCount = document.getElementById('char-count');
 const voiceInfoName = document.getElementById('voice-info-name');
@@ -30,7 +21,6 @@ const downloadLink = document.getElementById('download-link');
 const shareBtn = document.getElementById('share-btn');
 const quotaStatus = document.getElementById('quota-status');
 
-// --- State ---
 let voiceDetails = [];
 let lastAudioBlob = null;
 let lastAudioUrl = null;
@@ -38,12 +28,11 @@ let turnstileRequired = false;
 let turnstileToken = null;
 let quotaUnlimited = false;
 let remainingQuota = null;
-const openedDropdowns = [];
 
-// --- Quota Management ---
 function updateCharCount() {
   const length = textInput.value.length;
   const overLimit = !quotaUnlimited && remainingQuota !== null && length > remainingQuota;
+
   charCount.textContent = `${length.toLocaleString()} characters`;
   charCount.classList.toggle('char-count-warning', overLimit);
   quotaStatus.classList.toggle('char-count-warning', overLimit);
@@ -54,8 +43,10 @@ async function refreshQuotaStatus() {
     const headers = {};
     const customKey = customKeyInput.value.trim();
     if (customKey) headers['x-custom-key'] = customKey;
-    const res = await fetch(API_PATH.QUOTA, { headers });
+
+    const res = await fetch('/api/quota', { headers });
     const data = await res.json();
+
     quotaUnlimited = Boolean(data.unlimited);
     remainingQuota = quotaUnlimited ? null : data.remaining;
 
@@ -70,11 +61,40 @@ async function refreshQuotaStatus() {
   updateCharCount();
 }
 
-// --- Dropdown Management ---
+updateCharCount();
+
+try {
+  const savedKey = localStorage.getItem('vox-labs-api-key');
+  if (savedKey) {
+    customKeyInput.value = savedKey;
+    customKeyPanel.classList.remove('hidden');
+  }
+} catch {}
+
+customKeyToggle.addEventListener('click', () => {
+  customKeyPanel.classList.toggle('hidden');
+});
+
+customKeyInput.addEventListener('input', () => {
+  const val = customKeyInput.value.trim();
+  try {
+    if (val) localStorage.setItem('vox-labs-api-key', val);
+    else localStorage.removeItem('vox-labs-api-key');
+  } catch {}
+  refreshQuotaStatus();
+});
+
+const allDropdownWrappers = [];
+
 function closeAllDropdowns() {
-  openedDropdowns.forEach((wrapper) => wrapper.classList.remove('open'));
+  allDropdownWrappers.forEach((wrapper) => wrapper.classList.remove('open'));
   document.querySelectorAll('.dropdown-trigger').forEach((btn) => btn.setAttribute('aria-expanded', 'false'));
 }
+
+document.addEventListener('click', closeAllDropdowns);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeAllDropdowns();
+});
 
 function createDropdown({ wrapperId, btnId, labelId, panelId, onSelect }) {
   const wrapper = document.getElementById(wrapperId);
@@ -83,7 +103,7 @@ function createDropdown({ wrapperId, btnId, labelId, panelId, onSelect }) {
   const panel = document.getElementById(panelId);
   let selectedId = null;
 
-  openedDropdowns.push(wrapper);
+  allDropdownWrappers.push(wrapper);
 
   function close() {
     wrapper.classList.remove('open');
@@ -146,11 +166,24 @@ const langDropdown = createDropdown({
   panelId: 'lang-dropdown-panel',
 });
 
-// --- Voice Info ---
+function setLoading(isLoading) {
+  generateBtn.disabled = isLoading || (turnstileRequired && !turnstileToken);
+  btnLabel.textContent = isLoading ? 'Generating…' : 'Generate Speech';
+}
+
+function showError(message) {
+  errorBox.textContent = message;
+  errorBox.classList.remove('hidden');
+}
+
+function hideError() {
+  errorBox.classList.add('hidden');
+}
+
 function stopPreview() {
   previewAudio.pause();
   previewIconPlay.classList.remove('hidden');
-  previewIconPause.classList.remove('hidden');
+  previewIconPause.classList.add('hidden');
   previewBtn.setAttribute('aria-label', 'Play voice preview');
 }
 
@@ -162,6 +195,7 @@ function getSelectedDetail() {
 function updateVoiceInfo() {
   stopPreview();
   const detail = getSelectedDetail();
+
   if (!detail) {
     voiceInfoName.textContent = '—';
     voiceDescription.textContent = 'Select a voice to see its description.';
@@ -169,19 +203,20 @@ function updateVoiceInfo() {
     previewBtn.disabled = true;
     return;
   }
+
   voiceInfoName.textContent = detail.voice;
   voiceDescription.textContent = detail.description || 'No description available.';
   voiceLanguages.textContent = detail.supportedLanguages ? `Supports: ${detail.supportedLanguages}` : '';
   previewBtn.disabled = !detail.audio;
 }
 
-// --- Reverb Toggle ---
+textInput.addEventListener('input', updateCharCount);
+
 reverbToggle.addEventListener('change', () => {
   reverbTrack.classList.toggle('bg-accent', reverbToggle.checked);
   reverbTrack.classList.toggle('bg-border', !reverbToggle.checked);
 });
 
-// --- Preview Handler ---
 previewBtn.addEventListener('click', () => {
   const detail = getSelectedDetail();
   if (!detail?.audio) return;
@@ -201,10 +236,9 @@ previewBtn.addEventListener('click', () => {
 
 previewAudio.addEventListener('ended', stopPreview);
 
-// --- Load Voices ---
 async function loadVoices() {
   try {
-    const res = await fetch(API_PATH.VOICES);
+    const res = await fetch('/api/voices');
     if (!res.ok) throw new Error();
     const data = await res.json();
     voiceDetails = data.details ?? [];
@@ -218,21 +252,6 @@ async function loadVoices() {
     document.getElementById('lang-dropdown-label').textContent = 'Failed to load';
     showError("Couldn't load the voice list from the API. Please refresh the page.");
   }
-}
-
-// --- TTS Generation ---
-function setLoading(isLoading) {
-  generateBtn.disabled = isLoading || (turnstileRequired && !turnstileToken);
-  btnLabel.textContent = isLoading ? 'Generating…' : 'Generate Speech';
-}
-
-function showError(message) {
-  errorBox.textContent = message;
-  errorBox.classList.remove('hidden');
-}
-
-function hideError() {
-  errorBox.classList.add('hidden');
 }
 
 async function generateSpeech() {
@@ -252,7 +271,7 @@ async function generateSpeech() {
     const customKey = customKeyInput.value.trim();
     if (customKey) headers['x-custom-key'] = customKey;
 
-    const res = await fetch(API_PATH.TTS, {
+    const res = await fetch('/api/tts', {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -292,7 +311,6 @@ async function generateSpeech() {
   }
 }
 
-// --- Download & Share ---
 downloadLink.addEventListener('click', () => {
   const url = downloadLink.dataset.url;
   const filename = downloadLink.dataset.filename || 'vox-labs.mp3';
@@ -323,18 +341,15 @@ shareBtn.addEventListener('click', async () => {
   }
 });
 
-// --- Turnstile ---
 async function initTurnstile() {
   try {
-    const res = await fetch(API_PATH.CONFIG);
+    const res = await fetch('/api/config');
     const config = await res.json();
     if (!config.turnstileSiteKey) return;
 
     turnstileRequired = true;
     generateBtn.disabled = true;
-
-    const section = document.getElementById('turnstile-section');
-    section.classList.remove('hidden');
+    document.getElementById('turnstile-section').classList.remove('hidden');
 
     const container = document.getElementById('turnstile-container');
     container.setAttribute('data-sitekey', config.turnstileSiteKey);
@@ -354,38 +369,7 @@ window.onTurnstileVerified = (token) => {
   generateBtn.disabled = false;
 };
 
-// --- Event Listeners ---
 generateBtn.addEventListener('click', generateSpeech);
-textInput.addEventListener('input', updateCharCount);
-
-customKeyToggle.addEventListener('click', () => {
-  customKeyPanel.classList.toggle('hidden');
-});
-
-customKeyInput.addEventListener('input', () => {
-  const val = customKeyInput.value.trim();
-  try {
-    if (val) localStorage.setItem('vox-labs-api-key', val);
-    else localStorage.removeItem('vox-labs-api-key');
-  } catch {}
-  refreshQuotaStatus();
-});
-
-document.addEventListener('click', closeAllDropdowns);
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeAllDropdowns();
-});
-
-// --- Init ---
-try {
-  const savedKey = localStorage.getItem('vox-labs-api-key');
-  if (savedKey) {
-    customKeyInput.value = savedKey;
-    customKeyPanel.classList.remove('hidden');
-  }
-} catch {}
-
-updateCharCount();
 loadVoices();
 refreshQuotaStatus();
 initTurnstile();
